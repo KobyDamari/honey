@@ -1,0 +1,59 @@
+.contactList {
+  &__card {
+    font-size: 12px;
+    border-radius: 5px;
+    background-color: white;
+    padding: 10px;
+    width: 210px;
+    height: 250px;
+    overflow: hidden;
+    cursor: pointer;
+    color: #76767a;
+    display: inline-block;
+    margin: 5px 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+    &__img {
+      width: 100%;
+      display: block;
+      height: 80%;
+      transition: height 0.5s linear;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+
+    &:hover {
+      .contactList__card__img {
+        height: 60%;
+      }
+    }
+
+    &__footer {
+      padding: 11px 3px;
+      position: relative;
+
+      span {
+        display: block;
+      }
+
+      &__name {
+        font-size: 16px;
+        font-weight: bold;
+      }
+
+      &__phone {
+        margin-top: 15px;
+      }
+
+      &__icon {
+        position: absolute;
+        top: -29px;
+        left: 5px;
+        width: 40px;
+        height: 40px;
+      }
+    }
+  }
+}
