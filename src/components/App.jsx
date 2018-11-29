@@ -1,39 +1,43 @@
 import React from 'react';
 import 'assets/scss/App.scss';
-import Title from './Title/Title';
-import SearchInput from './SearchInput/SearchInput'
-import ContactList from '../components/ContactList/ContactList'
-import { getContacts, searchContact } from '../services/ContactsServices'
+import { InteractiveForceGraph, ForceGraphNode, ForceGraphLink } from 'react-vis-force';
+
 
 class App extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { contacts: null, filteredContacts: null };
-        this.search = this.search.bind(this);
+        this.state = { graph: null };
+        this.getGraph = this.getGraph.bind(this);
     }
 
 
     componentDidMount() {
-        getContacts().then((res) => {
-            res.json().then(res => this.setState({ contacts: res }));
+        this.getGraph();
+    }
+
+    getGraph() {
+        fetch('http://127.0.0.1:8082/api/packages/express/latest').then((res) => {
+            return res.json();
+        }).then((result) => {
+            this.setState({ graph: result });
         }).catch((err) => {
             console.log(err)
         });
     }
 
-    search(value) {
-        const FilteredContact = searchContact(this.state.contacts, value);
-        this.setState({ filteredContacts: FilteredContact });
-    }
-
     render() {
-        const { contacts, filteredContacts } = this.state;
+        const { graph } = this.state;
         return (
             <div className="contacts">
-                <Title text="Contact-List">
-                    <SearchInput searchAction={this.search} />
-                </Title>
-                <ContactList contacts={filteredContacts || contacts} />
+                {graph ? <InteractiveForceGraph
+                    simulationOptions={{ height: 500, width: 500 }}
+                    labelAttr="label"
+                    onSelectNode={(node) => console.log(node)}
+                    opacityFactor={1}
+                >
+                    {graph.nodes.map(node => <ForceGraphNode node={{ id: node.id, label: node.id }} fill="red" />)}
+                    {graph.links.map(link => <ForceGraphLink link={{ source: link.source, target: link.target }} />)}
+                </InteractiveForceGraph> : 'loading'}
             </div>
         );
     }
