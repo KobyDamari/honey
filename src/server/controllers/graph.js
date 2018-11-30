@@ -1,48 +1,45 @@
 const fetch = require('node-fetch');
+const arrayToTree = require('array-to-tree');
+const packageService = require('../../services/packages');
 
 async function getTree(name, version) {
     let root = {};
     root[name] = version;
     let myPackgesQueue = [root];
-    let graph = await createGraph(myPackgesQueue);
-    //const nestedGraph = getNestedTree(graph, 0);
-    // console.log(nestedGraph);
+    try {
+        const graph = await getUnknownNodes(myPackgesQueue);
+        const result = await packageService.insertNodes(graph);
+        const rootNodeChildren = await packageService.getPackageTree(graph[0].name);
+        return nodesToNestedArray(rootNodeChildren);
+    } catch (e) {
+        console.log(e);
+    }
+
 }
 
-async function createGraph(queue) {
+async function getUnknownNodes(queue) {
+    let { name, version } = await getData(queue[0]);
+    queue[0][name] = version; // change version name from latest to current
+    let graph = [{ name: getNodeKey(name, version), parent: null }];
     let visited = [];
-    let graph = [];
-    let level = 0;
     while (queue.length > 0) {
-        let { name, version, dependencies } = await getData(queue[0]);
-        let curr = getNodeKey(name, version);
-        if (name) {
-            if (typeof dependencies !== 'undefined' && Object.keys(dependencies).length) {
-                let result = getDepnendciesAsNode(dependencies, visited, curr);
-                graph = graph.concat(result);
-                level++;
+        const [key, value] = Object.entries(queue[0])[0];
+        const isNodeExists = await packageService.isExists(getNodeKey(key, value));
+        if (!isNodeExists) {
+            let { name, version, dependencies } = await getData(queue[0]);
+            let curr = getNodeKey(name, version);
+            if (name) {
+                if (typeof dependencies !== 'undefined' && Object.keys(dependencies).length) {
+                    let result = getDepnendciesAsNode(dependencies, visited, curr);
+                    graph = graph.concat(result);
+                }
+                visited[curr] = version;
+                addDependencysToQueue(queue, dependencies, visited);
             }
-            visited[curr] = version;
-            addDependencysToQueue(queue, dependencies, visited);
         }
         queue.shift();
     }
     return graph;
-}
-
-function getNestedTree(arr, level) {
-    const result = [];
-    for (let i in arr) {
-        if (arr[i].level === level) {
-            let children = getNestedTree(arr, arr[i].id);
-
-            if (children.length) {
-                arr[i].children = children
-            }
-            result.push(arr[i])
-        }
-    }
-    return result
 }
 
 function getDepnendciesAsNode(deps, visited, parent) {
@@ -53,7 +50,7 @@ function getDepnendciesAsNode(deps, visited, parent) {
             result.push({ name: packageKey, parent: parent })
         }
     }));
-    return  result;
+    return result;
 }
 
 async function getData(url) {
@@ -90,15 +87,30 @@ function getNodeKey(name, version) {
     return `${name}_v${version}`;
 }
 
-function getDependencyArr(deps) {
-    if (deps) {
-        return Object.entries(deps).reduce((arr, curr) => {
-            [depName, depVersion] = curr;
-            arr.push(getNodeKey(depName, depVersion));
-            return arr;
-        }, [])
+function nodesToNestedArray(rootNodeChildren) {
+    // getting root into the the the packages
+    const packages = [
+        { package: rootNodeChildren[0].package, parent: null, level: -1 },
+        ...rootNodeChildren[0].children
+    ];
+    //prepare the result for client
+    nodes = packages.map(package => ({ name: package.package, parent: package.parent }));
+
+    let map = {}, node, roots = [], i;
+    for (i = 0; i < nodes.length; i += 1) {
+        map[nodes[i].name] = i; // initialize the map
+        nodes[i].children = []; // initialize the children
     }
-    return [];
+    for (i = 0; i < nodes.length; i += 1) {
+        node = nodes[i];
+        if (node.parent) {
+            // if you have dangling branches check that map[node.parentId] exists
+            nodes[map[node.parent]].children.push(node);
+        } else {
+            roots.push(node);
+        }
+    }
+    return roots;
 }
 
 module.exports = {

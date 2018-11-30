@@ -5,11 +5,12 @@ const getPackageTree = async (packageName) => {
         { $match: { package: packageName } },
         {
             $graphLookup: {
-                from: 'Packages',
+                from: 'packages',
                 startWith: '$package',
                 connectFromField: 'package',
                 connectToField: 'parent',
-                as: 'children'
+                as: 'children',
+                depthField: "level"
             }
         }
     ])
@@ -33,7 +34,7 @@ const insertNodes = async (nodesArray) => {
     return await Packages.bulkWrite(queries);
 };
 
-const isExits = async (packageName) => {
+const isExists = async (packageName) => {
     const package = await Packages.findOne({ package: packageName });
     if (package) {
         return true;
@@ -42,7 +43,7 @@ const isExits = async (packageName) => {
 };
 
 module.exports = {
-    isExits,
+    isExists,
     getPackageTree,
     insertNodes
 };
