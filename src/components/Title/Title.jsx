@@ -6,7 +6,7 @@ const Title = (props) => {
     return (
         <header id="header">
             <span>{text}</span>
-            {props.children}
+            <img id="logo" src="https://snyk.io/wp-content/themes/snyk_v2_etyhadar/dist/images/svg/logo.svg" />
         </header>
     );
 }
