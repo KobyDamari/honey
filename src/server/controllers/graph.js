@@ -1,13 +1,12 @@
 const fetch = require('node-fetch');
-const arrayToTree = require('array-to-tree');
 const packageService = require('../../services/packages');
 
 async function getTree(name, version) {
     let root = {};
     root[name] = version;
-    let myPackgesQueue = [root];
+    let myPackagesQueue = [root];
     try {
-        const graph = await getUnknownNodes(myPackgesQueue);
+        const graph = await getUnknownNodes(myPackagesQueue);
         const result = await packageService.insertNodes(graph);
         const rootNodeChildren = await packageService.getPackageTree(graph[0].name);
         return nodesToNestedArray(rootNodeChildren);
@@ -19,7 +18,7 @@ async function getTree(name, version) {
 
 async function getUnknownNodes(queue) {
     let { name, version } = await getData(queue[0]);
-    queue[0][name] = version; // change version name from latest to current
+    queue[0][name] = version; // change version name to the version exists on API
     let graph = [{ name: getNodeKey(name, version), parent: null }];
     let visited = [];
     while (queue.length > 0) {
@@ -34,7 +33,7 @@ async function getUnknownNodes(queue) {
                     graph = graph.concat(result);
                 }
                 visited[curr] = version;
-                addDependencysToQueue(queue, dependencies, visited);
+                addDependencyToQueue(queue, dependencies, visited);
             }
         }
         queue.shift();
@@ -73,11 +72,11 @@ function removePrefix(version) {
     return version;
 }
 
-function addDependencysToQueue(queue, dependecies, visited) {
-    for (var packge in dependecies) {
-        var node = {};
-        node[packge] = dependecies[packge];
-        let nodeKey = getNodeKey(packge, node[packge]);
+function addDependencyToQueue(queue, dependecies, visited) {
+    for (var package in dependecies) {
+        let node = {};
+        node[package] = dependecies[package];
+        let nodeKey = getNodeKey(package, node[package]);
         if (typeof  visited[nodeKey] === 'undefined')
             queue.push(node);
     }
