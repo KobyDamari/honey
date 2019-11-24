@@ -73,8 +73,8 @@
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "md5": "^2.2.1",
-    "mongodb": "^3.1.0",
-    "mongoose": "^5.2.1",
+    "mongodb": "^3.1.13",
+    "mongoose": "^5.4.10",
     "react-easy-chart": "^1.0.0",
     "react-table": "^6.8.6"
   },
